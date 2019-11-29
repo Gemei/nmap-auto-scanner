@@ -99,8 +99,6 @@ def tcp_full_udp_default():
 		make_dir(host)
 		scans.append("nmap -vv -sS -sC -sV -A -n -p- %s -oA ./%s/%s-TCP-FULL"%(host,host,host))
 		scans.append("nmap -vv -sU -sV -n --max-retries 1 %s -oA ./%s/%s-UDP-DEFAULT"%(host,host,host))
-		#scans.append("ping -c 10 %s"%(host))
-		#scans.append("ping -c 4 %s"%(host))
 
 	run_threads(scans)
 	
@@ -109,8 +107,6 @@ def make_dir(host):
 		subprocess.call(["mkdir", str(host)])
 
 def run_threads(scans):
-	#processes = [subprocess.Popen(scan, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE) for scan in scans]
-	
 	number_of_scans=len(scans)
 	
 	processes = (subprocess.Popen(scan, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE) for scan in scans)
@@ -126,41 +122,6 @@ def run_threads(scans):
 			    		break
 	print(colored("\rAll Scans Completed!\n\r", 'blue'))
 	sys.stdout.flush()
-	#Get active processes
-	#progress_counter = get_active_processes()
-	#progress_bar(progress_counter)
-
-
-'''
-def get_active_processes():
-	procs = subprocess.check_output(['ps', 'uaxw']).splitlines()
-	scans_procs = []
-	for proc in procs:
-		if((proc.find('ping') != -1) and (proc.find('/bin/sh -c ping') > 0)):
-			scans_procs.append(proc)
-	processes_number = len(scans_procs)
-	return(processes_number)
-
-
-def progress_bar(count):
-	prev_running_count = count
-	with tqdm(total=count) as pbar:
-		time.sleep(1)
-		while True:
-			current_running_count = get_active_processes()
-			diff = prev_running_count-current_running_count
-			if((diff) >= 0):
-				prev_running_count-=diff
-				pbar.update(diff)
-				diff=0
-			if(current_running_count == 0):
-				pbar.update(count)
-				break
-	print(colored("\rAll Scans Completed!\n\r", 'blue'))
-	sys.stdout.flush()
-	exit()
-'''
-
 
 def wrong_scan_type():
 	print("Oops wrong scan type!")
