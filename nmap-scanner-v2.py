@@ -7,8 +7,15 @@ from termcolor import colored
 from itertools import islice
 
 if len(sys.argv) < 4:
-	print('[*] Usage: python nmap-scanner-v2.py <File with list of hosts> (UDP|TCP|UDP-All|TCP-All|All-Default|All-Full|TCP-Full-UDP-Default) <number of threads> (<= 10)')
-	print('[*] Example: python nmap-scanner-v2.py hosts.txt All-Full 5')
+	print(colored('[*] Usage:	python nmap-scanner-v2.py <File with list of hosts> (UDP|TCP|UDP-All|TCP-All|Athena|Circe|Zeus) <number of threads> (<= 10)\n','blue'))
+	print('[*] UDP: 	UDP default ports scan\n'+
+		  '[*] TCP: 	TCP default ports scan\n'+
+		  '[*] UDP-All:	UDP all ports scan\n'+
+		  '[*] TCP-All:	TCP all ports scan\n'+
+		  '[*] Athena:	TCP & UDP default ports scan\n'+
+		  '[*] Crice:	TCP full & UDP default ports scan\n'+
+		  '[*] Zeus:	TCP & UDP full ports scan\n')
+	print(colored('[*] Example:	python nmap-scanner-v2.py hosts.txt Circe 5','red'))
 	exit()
 
 
@@ -65,7 +72,7 @@ def tcp_full():
 
 	run_threads(scans)
 
-def all_default():
+def athena():
 	print("All Default Ports Scan")
 	scans = []
 	
@@ -77,7 +84,7 @@ def all_default():
 
 	run_threads(scans)
 
-def all_full():
+def zeus():
 	print("All Full Ports Scan")
 	scans = []
 	
@@ -89,7 +96,7 @@ def all_full():
 
 	run_threads(scans)
 	
-def tcp_full_udp_default():
+def crice():
 	print("TCP Full Ports Scan With Default Ports For UDP")
 	scans = []
 
@@ -109,19 +116,20 @@ def make_dir(host):
 def run_threads(scans):
 	number_of_scans=len(scans)
 	
-	processes = (subprocess.Popen(scan, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE) for scan in scans)
+	processes = (subprocess.Popen(scan, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE) for scan in scans)
 	running_processes = list(islice(processes, nthreades))
 	with tqdm(total=number_of_scans) as pbar:
 		while running_processes:
-		    for i, process in enumerate(running_processes):
-		    	if process.poll() is not None:  # the process has finished
-		    		pbar.update(1)
-		    		running_processes[i] = next(processes, None)  # start new process
-		    		if running_processes[i] is None: # no new processes
-			    		del running_processes[i]
-			    		break
-	print(colored("\rAll Scans Completed!\n\r", 'blue'))
-	sys.stdout.flush()
+			for i, process in enumerate(running_processes):
+				res = process.communicate()
+				print(colored("[X] Error: "+res[1],'red'))
+				if process.poll() is not None:  # the process has finished
+					pbar.update(1)
+					running_processes[i] = next(processes, None)  # start new process
+					if running_processes[i] is None: # no new processes
+						del running_processes[i]
+						break
+	print(colored("\rAll Scans Completed!\n\r", 'magenta'))
 
 def wrong_scan_type():
 	print("Oops wrong scan type!")
@@ -132,9 +140,9 @@ def scan_types_switcher(scan_type):
         "tcp": tcp,
         "udp-full": udp_full,
         "tcp-full": tcp_full,
-        "all-default": all_default,
-        "all-full": all_full,
-        "tcp-full-udp-default": tcp_full_udp_default
+        "athena": athena,
+        "zeus": zeus,
+        "crice": crice
     }
     # Get the function from switcher dictionary
     func = switcher.get(scan_type)
