@@ -10,3 +10,5 @@ Python script to automate some nmap scans
   * __Crice__:	TCP full & UDP default ports scan
   * __Zeus__:	TCP & UDP full ports scan
 * Example:	__python nmap-scanner-v2.py hosts.txt Circe 5__
+
+*Requires root privilages to run*
