@@ -7,11 +7,11 @@ from termcolor import colored
 from itertools import islice
 
 if len(sys.argv) < 4:
-	print(colored('[*] Usage:	python nmap-scanner-v2.py <File with list of hosts> (UDP|TCP|UDP-All|TCP-All|Athena|Circe|Zeus) <number of threads> (<= 10)\n','blue'))
+	print(colored('[*] Usage:	python nmap-scanner-v2.py <File with list of hosts> (UDP|TCP|UDP-Full|TCP-Full|Athena|Circe|Zeus) <number of threads> (<= 10)\n','blue'))
 	print('[*] UDP: 	UDP default ports scan\n'+
 		  '[*] TCP: 	TCP default ports scan\n'+
-		  '[*] UDP-All:	UDP all ports scan\n'+
-		  '[*] TCP-All:	TCP all ports scan\n'+
+		  '[*] UDP-Full:	UDP all ports scan\n'+
+		  '[*] TCP-Full:	TCP all ports scan\n'+
 		  '[*] Athena:	TCP & UDP default ports scan\n'+
 		  '[*] Crice:	TCP full & UDP default ports scan\n'+
 		  '[*] Zeus:	TCP & UDP full ports scan\n')
