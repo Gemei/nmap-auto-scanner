@@ -2,7 +2,7 @@
 import os
 import sys
 import subprocess
-from tqdm import tqdm
+from progress.bar import IncrementalBar
 from termcolor import colored
 from itertools import islice
 
@@ -21,7 +21,6 @@ if len(sys.argv) < 4:
 
 scan_type = sys.argv[2]
 nthreades = int(sys.argv[3])
-
 
 def get_hosts_list():
 	with open(sys.argv[1]) as file:
@@ -106,6 +105,8 @@ def crice():
 		make_dir(host)
 		scans.append("nmap -vv -sS -sV -A -n --script=default,vuln -p- %s -oA ./%s/%s-TCP-FULL"%(host,host,host))
 		scans.append("nmap -vv -sU -sV -n --script=default,vuln --max-retries 1 %s -oA ./%s/%s-UDP-DEFAULT"%(host,host,host))
+		#scans.append("ping -c 10 %s"%(host))
+		#scans.append("ping -c 20 %s"%(host))
 
 	run_threads(scans)
 	
@@ -115,20 +116,26 @@ def make_dir(host):
 
 def run_threads(scans):
 	number_of_scans=len(scans)
-	
+	bar = IncrementalBar('Scanning::', max=number_of_scans, suffix='%(index)d/%(max)d | %(percent).1f%% | %(elapsed)ds')
+
+
 	processes = (subprocess.Popen(scan, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE) for scan in scans)
 	running_processes = list(islice(processes, nthreades))
-	with tqdm(total=number_of_scans) as pbar:
-		while running_processes:
-			for i, process in enumerate(running_processes):
-				res = process.communicate()
+
+	#with tqdm(total=number_of_scans) as pbar:
+	while running_processes:
+		for i, process in enumerate(running_processes):
+			res = process.communicate()
+			if res[1]:
 				print(colored("[X] Error: "+res[1],'red'))
-				if process.poll() is not None:  # the process has finished
-					pbar.update(1)
-					running_processes[i] = next(processes, None)  # start new process
-					if running_processes[i] is None: # no new processes
-						del running_processes[i]
-						break
+			#pbar.update(1)
+			bar.next()
+			if process.poll() is not None:  # the process has finished
+				running_processes[i] = next(processes, None)  # start new process
+				if running_processes[i] is None: # no new processes
+					del running_processes[i]
+					break
+	bar.finish()
 	print(colored("\rAll Scans Completed!\n\r", 'magenta'))
 
 def wrong_scan_type():
