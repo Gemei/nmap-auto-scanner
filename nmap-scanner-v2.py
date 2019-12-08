@@ -1,10 +1,8 @@
 #!/usr/bin/python
-import os
-import sys
-import subprocess
+import os, sys, subprocess, shlex, multiprocessing
+from multiprocessing.pool import ThreadPool
 from progress.bar import IncrementalBar
 from termcolor import colored
-from itertools import islice
 
 if len(sys.argv) < 4:
 	print(colored('[*] Usage:	python nmap-scanner-v2.py <File with list of hosts> (UDP|TCP|UDP-Full|TCP-Full|Athena|Circe|Zeus) <number of threads> (<= 10)\n','blue'))
@@ -56,7 +54,7 @@ def udp_full():
 	hosts_list=get_hosts_list()
 	hosts_list = map(lambda s: s.strip(), hosts_list)
 	for host in hosts_list:
-		scans.append("nmap -vv -sU -sV -A -n --script=default,vuln -p- %s -oA ./%s/%s-TCP-FULL"%(host,host,host))
+		scans.append("nmap -vv -sU -sV -A -n --script=default,vuln -p- %s -oA ./%s/%s-UDP-FULL"%(host,host,host))
 
 	run_threads(scans)
 
@@ -114,30 +112,34 @@ def make_dir(host):
 	if not os.path.isdir(host):
 		subprocess.call(["mkdir", str(host)])
 
+def create_process(scan):
+	proc_communicators=[]
+	proc = subprocess.Popen(shlex.split(scan), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+	stdout, stderr = proc.communicate()
+	update_progress_bar()
+	if stderr:
+		print(colored("[X] Error: "+stderr,'red'))
+
 def run_threads(scans):
+	global pbar
+	results = []
+	proc_communicators=[]
 	number_of_scans=len(scans)
-	bar = IncrementalBar('Scanning::', max=number_of_scans, suffix='%(index)d/%(max)d | %(percent).1f%% | %(elapsed)ds')
+	pbar = IncrementalBar('Scanning::', max=number_of_scans, suffix='%(index)d/%(max)d | %(percent).1f%% | %(elapsed)ds')
 
-
-	processes = (subprocess.Popen(scan, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE) for scan in scans)
-	running_processes = list(islice(processes, nthreades))
-
-	#with tqdm(total=number_of_scans) as pbar:
-	while running_processes:
-		for i, process in enumerate(running_processes):
-			res = process.communicate()
-			if res[1]:
-				print(colored("[X] Error: "+res[1],'red'))
-			#pbar.update(1)
-			bar.next()
-			if process.poll() is not None:  # the process has finished
-				running_processes[i] = next(processes, None)  # start new process
-				if running_processes[i] is None: # no new processes
-					del running_processes[i]
-					break
-	bar.finish()
+	pool = ThreadPool(nthreades)
+	pool.map(create_process, (scans))
+	pool.close()
+	pool.join()
+	
+	pbar.finish()
 	print(colored("\rAll Scans Completed!\n\r", 'magenta'))
 
+def update_progress_bar():
+	global pbar
+	pbar.next()
+	
 def wrong_scan_type():
 	print("Oops wrong scan type!")
 
