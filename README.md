@@ -1,3 +1,6 @@
+##### Prequests
+	pip install progress
+------------
 # nmap-auto-scanner
 Python script to automate some nmap scans
 
@@ -12,3 +15,9 @@ Python script to automate some nmap scans
 * Example:	__python nmap-scanner-v2.py hosts.txt Circe 5__
 
 *Requires root privilages to run*
+
+------------
+##### FAQ
+What happend to V1?
+
+Dead! Yeah sad but true....
