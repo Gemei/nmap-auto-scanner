@@ -32,6 +32,7 @@ def udp():
 	hosts_list=get_hosts_list()
 	hosts_list = map(lambda s: s.strip(), hosts_list)
 	for host in hosts_list:
+		make_dir(host)
 		scans.append("nmap -vv -sU -sV -A -n --script=default,vuln --max-retries 1 %s -oA ./%s/%s-UDP-DEFAULT"%(host,host,host))
 
 	run_threads(scans)
@@ -43,6 +44,7 @@ def tcp():
 	hosts_list=get_hosts_list()
 	hosts_list = map(lambda s: s.strip(), hosts_list)
 	for host in hosts_list:
+		make_dir(host)
 		scans.append("nmap -vv -sS -sV -A -n --script=default,vuln %s -oA ./%s/%ss-TCP-DEFAULT"%(host,host,host))
 
 	run_threads(scans)
@@ -54,6 +56,7 @@ def udp_full():
 	hosts_list=get_hosts_list()
 	hosts_list = map(lambda s: s.strip(), hosts_list)
 	for host in hosts_list:
+		make_dir(host)
 		scans.append("nmap -vv -sU -sV -A -n --script=default,vuln -p- %s -oA ./%s/%s-UDP-FULL"%(host,host,host))
 
 	run_threads(scans)
@@ -65,6 +68,7 @@ def tcp_full():
 	hosts_list=get_hosts_list()
 	hosts_list = map(lambda s: s.strip(), hosts_list)
 	for host in hosts_list:
+		make_dir(host)
 		scans.append("nmap -vv -sS -sV -A -n --script=default,vuln -p- %s -oA ./%s/%s-TCP-FULL"%(host,host,host))
 
 	run_threads(scans)
@@ -76,6 +80,7 @@ def athena():
 	hosts_list=get_hosts_list()
 	hosts_list = map(lambda s: s.strip(), hosts_list)
 	for host in hosts_list:
+		make_dir(host)
 		scans.append("nmap -vv -sS -sV -A -n --script=default,vuln %s -oA ./%s/%s-TCP-DEFAULT"%(host,host,host))
 		scans.append("nmap -vv -sU -sV -n --script=default,vuln --max-retries 1 %s -oA ./%s/%s-UDP-DEFAULT"%(host,host,host))
 
@@ -88,6 +93,7 @@ def zeus():
 	hosts_list=get_hosts_list()
 	hosts_list = map(lambda s: s.strip(), hosts_list)
 	for host in hosts_list:
+		make_dir(host)
 		scans.append("nmap -vv -sS -sV -A -n --script=default,vuln -p- %s -oA ./%s/%s-TCP-FULL"%(host,host,host))
 		scans.append("nmap -vv -sU -sV -n --script=default,vuln -p- --max-retries 1 %s -oA ./%s/%s-UDP-FULL"%(host,host,host))
 
