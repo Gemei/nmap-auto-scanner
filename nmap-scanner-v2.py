@@ -1,11 +1,12 @@
 #!/usr/bin/python
-import os, sys, subprocess, shlex, multiprocessing
+#Version 2.0.4
+import os, sys, subprocess, multiprocessing, curses, time
 from multiprocessing.pool import ThreadPool
 from progress.bar import IncrementalBar
 from termcolor import colored
 
 if len(sys.argv) < 4:
-	print(colored('[*] Usage:	python nmap-scanner-v2.py <File with list of hosts> (UDP|TCP|UDP-Full|TCP-Full|Athena|Circe|Zeus) <number of threads> (<= 10)\n','blue'))
+	print(colored('[*] Usage:	python nmap-scanner-v2.py <File with list of hosts> (UDP|TCP|UDP-Full|TCP-Full|Athena|Circe|Zeus) <number of threads> (<= 10) True|False\n','blue'))
 	print('[*] UDP: 	UDP default ports scan\n'+
 		  '[*] TCP: 	TCP default ports scan\n'+
 		  '[*] UDP-Full:	UDP all ports scan\n'+
@@ -13,12 +14,18 @@ if len(sys.argv) < 4:
 		  '[*] Athena:	TCP & UDP default ports scan\n'+
 		  '[*] Crice:	TCP full & UDP default ports scan\n'+
 		  '[*] Zeus:	TCP & UDP full ports scan\n')
+	print('[*] Optional Extra Options: True|False 	(-A -sV --script=default,vuln) # Default is False\n')
 	print(colored('[*] Example:	python nmap-scanner-v2.py hosts.txt Circe 5','red'))
 	exit()
 
 
 scan_type = sys.argv[2]
 nthreades = int(sys.argv[3])
+if len(sys.argv) < 5:
+	extra_options = "False"
+else:
+	extra_options = sys.argv[4]
+print_counter = 2
 
 def get_hosts_list():
 	with open(sys.argv[1]) as file:
@@ -28,87 +35,108 @@ def get_hosts_list():
 def udp():
 	print("UDP Default Scan")
 	scans = []
-	
+	extras = ""
+
+	if "True" in extra_options:
+		extras="-sV -A --script=default,vuln"
 	hosts_list=get_hosts_list()
 	hosts_list = map(lambda s: s.strip(), hosts_list)
 	for host in hosts_list:
 		make_dir(host)
-		scans.append("nmap -vv -sU -sV -A -n --script=default,vuln --max-retries 1 %s -oA ./%s/%s-UDP-DEFAULT"%(host,host,host))
+		scans.append("nmap -vv -sU -Pn %s %s -oA ./%s/%s-UDP-DEFAULT"%(extras,host,host,host))
 
 	run_threads(scans)
 
 def tcp():
 	print("TCP Default Scan")
 	scans = []
-	
+	extras = ""
+
+	if "True" in extra_options:
+		extras="-sV -A --script=default,vuln"
 	hosts_list=get_hosts_list()
 	hosts_list = map(lambda s: s.strip(), hosts_list)
 	for host in hosts_list:
 		make_dir(host)
-		scans.append("nmap -vv -sS -sV -A -n --script=default,vuln %s -oA ./%s/%ss-TCP-DEFAULT"%(host,host,host))
+		scans.append("nmap -vv -sS -Pn %s %s -oA ./%s/%ss-TCP-DEFAULT"%(extras,host,host,host))
 
 	run_threads(scans)
 
 def udp_full():
 	print("UDP Full Ports Scan")
 	scans = []
+	extras = ""
 
+	if "True" in extra_options:
+		extras="-sV -A --script=default,vuln"
 	hosts_list=get_hosts_list()
 	hosts_list = map(lambda s: s.strip(), hosts_list)
 	for host in hosts_list:
 		make_dir(host)
-		scans.append("nmap -vv -sU -sV -A -n --script=default,vuln -p- %s -oA ./%s/%s-UDP-FULL"%(host,host,host))
+		scans.append("nmap -vv -sU -Pn -p- %s %s -oA ./%s/%s-UDP-FULL"%(extras,host,host,host))
 
 	run_threads(scans)
 
 def tcp_full():
 	print("TCP Full Ports Scan")
 	scans = []
+	extras = ""
 
+	if "True" in extra_options:
+		extras="-sV -A --script=default,vuln"
 	hosts_list=get_hosts_list()
 	hosts_list = map(lambda s: s.strip(), hosts_list)
 	for host in hosts_list:
 		make_dir(host)
-		scans.append("nmap -vv -sS -sV -A -n --script=default,vuln -p- %s -oA ./%s/%s-TCP-FULL"%(host,host,host))
+		scans.append("nmap -vv -sS -Pn -p- %s %s -oA ./%s/%s-TCP-FULL"%(extras,host,host,host))
 
 	run_threads(scans)
 
 def athena():
 	print("All Default Ports Scan")
 	scans = []
-	
+	extras = ""
+
+	if "True" in extra_options:
+		extras="-sV -A --script=default,vuln"
 	hosts_list=get_hosts_list()
 	hosts_list = map(lambda s: s.strip(), hosts_list)
 	for host in hosts_list:
 		make_dir(host)
-		scans.append("nmap -vv -sS -sV -A -n --script=default,vuln %s -oA ./%s/%s-TCP-DEFAULT"%(host,host,host))
-		scans.append("nmap -vv -sU -sV -n --script=default,vuln --max-retries 1 %s -oA ./%s/%s-UDP-DEFAULT"%(host,host,host))
+		scans.append("nmap -vv -sS -Pn %s %s -oA ./%s/%s-TCP-DEFAULT"%(extras,host,host,host))
+		scans.append("nmap -vv -sU -Pn %s %s -oA ./%s/%s-UDP-DEFAULT"%(extras,host,host,host))
 
 	run_threads(scans)
 
 def zeus():
 	print("All Full Ports Scan")
 	scans = []
-	
+	extras = ""
+
+	if "True" in extra_options:
+		extras="-sV -A --script=default,vuln"	
 	hosts_list=get_hosts_list()
 	hosts_list = map(lambda s: s.strip(), hosts_list)
 	for host in hosts_list:
 		make_dir(host)
-		scans.append("nmap -vv -sS -sV -A -n --script=default,vuln -p- %s -oA ./%s/%s-TCP-FULL"%(host,host,host))
-		scans.append("nmap -vv -sU -sV -n --script=default,vuln -p- --max-retries 1 %s -oA ./%s/%s-UDP-FULL"%(host,host,host))
+		scans.append("nmap -vv -sS -Pn -p- %s %s -oA ./%s/%s-TCP-FULL"%(extras,host,host,host))
+		scans.append("nmap -vv -sU -Pn -p- %s %s -oA ./%s/%s-UDP-FULL"%(extras,host,host,host))
 
 	run_threads(scans)
 	
 def crice():
 	print("TCP Full Ports Scan With Default Ports For UDP")
 	scans = []
+	extras = ""
 
+	if "True" in extra_options:
+		extras="-sV -A --script=default,vuln"
 	hosts_list=get_hosts_list()
 	hosts_list = map(lambda s: s.strip(), hosts_list)
 	for host in hosts_list:
 		make_dir(host)
-		scans.append("nmap -vv -sS -sV -A -n --script=default,vuln -p- %s -oA ./%s/%s-TCP-FULL"%(host,host,host))
-		scans.append("nmap -vv -sU -sV -n --script=default,vuln --max-retries 1 %s -oA ./%s/%s-UDP-DEFAULT"%(host,host,host))
+		scans.append("nmap -vv -sS -Pn -p- %s %s -oA ./%s/%s-TCP-FULL"%(extras,host,host,host))
+		scans.append("nmap -vv -sU -Pn %s %s -oA ./%s/%s-UDP-DEFAULT"%(extras,host,host,host))
 		#scans.append("ping -c 10 %s"%(host))
 		#scans.append("ping -c 20 %s"%(host))
 
@@ -119,20 +147,30 @@ def make_dir(host):
 		subprocess.call(["mkdir", str(host)])
 
 def create_process(scan):
-	proc_communicators=[]
-	proc = subprocess.Popen(shlex.split(scan), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+	global print_counter
+
+	proc = subprocess.Popen(scan, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
 
 	stdout, stderr = proc.communicate()
 	update_progress_bar()
 	if stderr:
-		print(colored("[X] Error: "+stderr,'red'))
+		print_there(print_counter+1,0,colored("\n[X] Error: "+stderr,'red'))
+		print_counter += 1
+	if stdout:
+		for line in stdout.splitlines():
+		    if "Discovered" in line:
+		        print_there(print_counter+1,0,colored("\n[X] Open Port: "+line,'green'))
+		        print_counter += 1
+	print_counter += 1
+
 
 def run_threads(scans):
 	global pbar
-	results = []
-	proc_communicators=[]
+
 	number_of_scans=len(scans)
 	pbar = IncrementalBar('Scanning::', max=number_of_scans, suffix='%(index)d/%(max)d | %(percent).1f%% | %(elapsed)ds')
+	animation = multiprocessing.Process(target=animation_start)
+	animation.start()
 
 	pool = ThreadPool(nthreades)
 	pool.map(create_process, (scans))
@@ -140,7 +178,27 @@ def run_threads(scans):
 	pool.join()
 	
 	pbar.finish()
-	print(colored("\rAll Scans Completed!\n\r", 'magenta'))
+	print("\n"*print_counter)
+	print(colored("All Scans Completed!\n\r", 'magenta'))
+	animation.terminate()
+	os.system('stty sane')		#Clean terminal after exit
+
+def print_there(x, y, text):
+     sys.stdout.write("\x1b7\x1b[%d;%df%s\x1b8" % (x, y, text))
+     sys.stdout.flush()
+
+def animation_start():
+	counter = 0
+	animation = "|/-\\"
+	while True:
+		time.sleep(0.1)
+		print_there(3,0,animation[counter % len(animation)])
+		print_there(3,2,animation[counter % len(animation)])
+		print_there(3,3,animation[counter % len(animation)])
+		counter += 1
+		if counter == 100:
+			counter = 0
+
 
 def update_progress_bar():
 	global pbar
@@ -168,6 +226,7 @@ def scan_types_switcher(scan_type):
     	func()
 
 def main():
+	subprocess.call('clear',shell=True)
 	scan_types_switcher(scan_type.lower())
 
 main()
