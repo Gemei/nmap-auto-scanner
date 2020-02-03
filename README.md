@@ -1,6 +1,7 @@
 ##### Current Version: 2.0.4
 ##### Prequests
 	pip install progress
+	pip install termcolor
 ------------
 # nmap-auto-scanner
 Python script to automate some nmap scans
