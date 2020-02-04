@@ -1,11 +1,12 @@
 #!/usr/bin/python
-#Version 2.0.4
-import os, sys, subprocess, multiprocessing, curses, time
+#Version 2.0.5
+import os, sys, subprocess, multiprocessing, curses, time, signal
 from multiprocessing.pool import ThreadPool
 from progress.bar import IncrementalBar
 from termcolor import colored
 
 if len(sys.argv) < 4:
+	print("[*] Nmap Scanner Version: 2.0.5")
 	print(colored('[*] Usage:	python nmap-scanner-v2.py <File with list of hosts> (UDP|TCP|UDP-Full|TCP-Full|Athena|Circe|Zeus) <number of threads> (<= 10) True|False\n','blue'))
 	print('[*] UDP: 	UDP default ports scan\n'+
 		  '[*] TCP: 	TCP default ports scan\n'+
@@ -141,69 +142,7 @@ def crice():
 		#scans.append("ping -c 20 %s"%(host))
 
 	run_threads(scans)
-	
-def make_dir(host):
-	if not os.path.isdir(host):
-		subprocess.call(["mkdir", str(host)])
 
-def create_process(scan):
-	global print_counter
-
-	proc = subprocess.Popen(scan, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-
-	stdout, stderr = proc.communicate()
-	update_progress_bar()
-	if stderr:
-		print_there(print_counter+1,0,colored("\n[X] Error: "+stderr,'red'))
-		print_counter += 1
-	if stdout:
-		for line in stdout.splitlines():
-		    if "Discovered" in line:
-		        print_there(print_counter+1,0,colored("\n[X] Open Port: "+line,'green'))
-		        print_counter += 1
-	print_counter += 1
-
-
-def run_threads(scans):
-	global pbar
-
-	number_of_scans=len(scans)
-	pbar = IncrementalBar('Scanning::', max=number_of_scans, suffix='%(index)d/%(max)d | %(percent).1f%% | %(elapsed)ds')
-	animation = multiprocessing.Process(target=animation_start)
-	animation.start()
-
-	pool = ThreadPool(nthreades)
-	pool.map(create_process, (scans))
-	pool.close()
-	pool.join()
-	
-	pbar.finish()
-	print("\n"*print_counter)
-	print(colored("All Scans Completed!\n\r", 'magenta'))
-	animation.terminate()
-	os.system('stty sane')		#Clean terminal after exit
-
-def print_there(x, y, text):
-     sys.stdout.write("\x1b7\x1b[%d;%df%s\x1b8" % (x, y, text))
-     sys.stdout.flush()
-
-def animation_start():
-	counter = 0
-	animation = "|/-\\"
-	while True:
-		time.sleep(0.1)
-		print_there(3,0,animation[counter % len(animation)])
-		print_there(3,2,animation[counter % len(animation)])
-		print_there(3,3,animation[counter % len(animation)])
-		counter += 1
-		if counter == 100:
-			counter = 0
-
-
-def update_progress_bar():
-	global pbar
-	pbar.next()
-	
 def wrong_scan_type():
 	print("Oops wrong scan type!")
 
@@ -224,6 +163,85 @@ def scan_types_switcher(scan_type):
     	print('Oops wrong scan type!')
     else:
     	func()
+
+def make_dir(host):
+	if not os.path.isdir(host):
+		subprocess.call(["mkdir", str(host)])
+
+def create_process(scan):
+	global print_counter
+
+	proc = subprocess.Popen(scan, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+
+	stdout, stderr = proc.communicate()
+	update_progress_bar()
+	if stderr:
+		print_there(print_counter+1,0,colored("\n[X] Error: "+stderr,'red'))
+		print_counter += 1
+	if stdout:
+		for line in stdout.splitlines():
+		    if "Discovered" in line:
+		        print_there(print_counter+1,0,colored("\n[*] Open Port: "+line,'green'))
+		        print_counter += 1
+	print_counter += 1
+
+
+def run_threads(scans):
+	global pbar
+
+	number_of_scans=len(scans)
+	pbar = IncrementalBar('Scanning::', max=number_of_scans, suffix='%(index)d/%(max)d | %(percent).1f%%')
+	
+	animation = multiprocessing.Process(target=animation_start)
+	animation.start()
+
+	elapsed_timer = multiprocessing.Process(target=start_timer)
+	elapsed_timer.start()
+
+	pool = ThreadPool(nthreades)
+	pool.map(create_process, (scans))
+	pool.close()
+	pool.join()
+	
+	animation.terminate()
+	elapsed_timer.terminate()
+	pbar.finish()
+	print("\n"*print_counter)
+	print(colored("All Scans Completed!\n", 'magenta'))
+	os.system('stty sane')		#Restore terminal stdout and stderr after exit
+
+def update_progress_bar():
+	global pbar
+	pbar.next()
+
+def print_there(x, y, text):
+     sys.stdout.write("\x1b7\x1b[%d;%df%s\x1b8" % (x, y, text))
+     sys.stdout.flush()
+
+def animation_start():
+	counter = 0
+	animation = "|/-\\"
+	while True:
+		time.sleep(0.1)
+		print_there(3,0,animation[counter % len(animation)])
+		print_there(3,2,animation[counter % len(animation)])
+		print_there(3,3,animation[counter % len(animation)])
+		counter += 1
+		if counter == 100:
+			counter = 0
+
+def start_timer():
+	start = time.time()
+	while True:
+		time.sleep(0.1)
+		end = time.time()
+		temp = end-start
+		hours = temp//3600
+		temp = temp - 3600*hours
+		minutes = temp//60
+		seconds = temp - 60*minutes
+		final_time = ('| %d:%d:%d' %(hours,minutes,seconds))
+		print_there(2,60,final_time)
 
 def main():
 	subprocess.call('clear',shell=True)
