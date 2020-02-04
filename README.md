@@ -1,4 +1,4 @@
-##### Current Version: 2.0.4
+##### Current Version: 2.0.5
 ##### Prequests
 	pip install progress
 	pip install termcolor
